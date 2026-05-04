@@ -1,0 +1,30 @@
+select * from items;
+select * from orders;
+select * from profit;
+select * from resurs;
+select * from skillset;
+select * from items i
+join skillset s on s.id_s = i.id_s;
+
+select * from orders o
+join resurs r on r.id_r = o.id_r
+join items i on i.id_i = o.id_i;
+
+create or replace view Profit_oll as
+select name_skillset , name_items, i.price as items_price, r.price as result_price, sell  from profit p
+join result r on r.id_result = p.id_result
+join items i on i.id_i = p.id_i
+join skillset s on s.id_s = i.id_i
+
+select name_skillset, name_items, sell from Profit_oll;
+
+
+
+
+create TRIGGER proschet_sella
+AFTER
+Update of sell on profit 
+For each row 
+BEGIN
+select sell from profit;
+END proschet_sella;
