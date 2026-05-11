@@ -1,0 +1,108 @@
+CREATE OR REPLACE TRIGGER update_order_time
+BEFORE UPDATE ON orders
+FOR EACH ROW
+BEGIN
+    :NEW.time := SYSDATE + 3/24;  -- Москва UTC+3
+END update_order_time;
+
+
+
+-- Выберите запись для теста
+SELECT id_o, id_r, time 
+FROM orders 
+WHERE id_o = 1;  -- используйте существующий id_o
+
+
+
+
+-- Запомните старое значение id_r и time
+UPDATE orders 
+SET id_r = 999  -- новое значение (используйте существующий id_r из resurs)
+WHERE id_o = 1;
+
+
+
+-- Посмотрите обновлённую запись
+SELECT id_o, id_r, time 
+FROM orders 
+WHERE id_o = 1;
+
+
+CREATE OR REPLACE FUNCTION calculate_profit(p_profit_id NUMBER)
+RETURN NUMBER
+IS
+    v_profit NUMBER;
+BEGIN
+    -- Прибыль = количество продаж * цена товара
+    SELECT p.sell * i.price
+    INTO v_profit
+    FROM profit p
+    JOIN items i ON i.id_i = p.id_i
+    WHERE p.id_p = p_profit_id;
+    
+    RETURN v_profit;
+END calculate_profit;
+/
+
+
+
+-- Для одной записи
+SELECT calculate_profit(1) AS profit FROM DUAL;
+
+-- Для всех записей в таблице profit
+SELECT id_p, calculate_profit(id_p) AS profit_amount FROM profit;
+
+
+
+SET SERVEROUTPUT ON;
+
+DECLARE
+    v_result NUMBER;
+BEGIN
+    v_result := calculate_profit(1);
+    DBMS_OUTPUT.PUT_LINE('Прибыль: ' || v_result);
+END;
+/
+
+
+
+
+CREATE OR REPLACE PROCEDURE update_item_price(
+    p_item_id NUMBER,
+    p_new_price NUMBER
+)
+IS
+BEGIN
+    UPDATE items
+    SET price = p_new_price
+    WHERE id_i = p_item_id;
+    
+    COMMIT;
+    DBMS_OUTPUT.PUT_LINE('Цена товара обновлена!');
+END update_item_price;
+/
+
+
+
+
+-- Вызвать процедуру
+EXECUTE update_item_price(1, 1500);
+
+-- Или так
+BEGIN
+    update_item_price(1, 1500);
+END;
+/
+
+
+
+
+
+-- Посмотреть старую цену
+SELECT id_i, name_items, price FROM items WHERE id_i = 1;
+
+-- Обновить цену
+EXECUTE update_item_price(1, 2000);
+
+-- Проверить новую цену
+SELECT id_i, name_items, price FROM items WHERE id_i = 1;
